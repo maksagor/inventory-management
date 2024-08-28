@@ -8,6 +8,7 @@ import Invoice from './Pages/Invoice/Invoice';
 import Login from './Pages/Authentication/Login';
 import Register from './Pages/Authentication/Register';
 import AddProduct from './Pages/Products/AddProducts';
+import Products from './Pages/Invoice/Products';
 const daysInMonth = 30;
 
 const router = createBrowserRouter ( [
@@ -18,6 +19,7 @@ const router = createBrowserRouter ( [
       {path: "/", element: <Invoice />},
       {path: "/invoice", element: <Invoice />},
       {path: "/login", element: <Login />},
+      {path: "/products", element: <Products />},
       {path: "/register", element: <Register />},
       {path: "/addproducts", element: <AddProduct />},
 
