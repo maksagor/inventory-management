@@ -17,23 +17,23 @@ import image9 from '../../assets/3.jpg';
 import image10 from '../../assets/1.jpg';
 import { Link } from "react-router-dom";
 
-const getInitialProducts = () => {
-    const savedProducts = localStorage.getItem('products');
-    return savedProducts ? JSON.parse(savedProducts) : [
-        { id: 1, image: image1, name: 'Potato Chips', unitPrice: 10, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 2, image: image2, name: 'Corn Chips', unitPrice: 20, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 3, image: image3, name: 'Pita Chips', unitPrice: 30, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 4, image: image4, name: 'Vegetable Chips', unitPrice: 40, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 5, image: image5, name: 'Kettle Chips', unitPrice: 50, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 6, image: image6, name: 'Banana Chips', unitPrice: 60, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 7, image: image7, name: 'Plantain Chips', unitPrice: 70, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 8, image: image8, name: 'Cassava Chips', unitPrice: 80, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 9, image: image9, name: 'Sweet Potato Chips', unitPrice: 90, weight: ['100g', '250g', '500g', '1kg'] },
-        { id: 10, image: image10, name: 'Tortilla Chips', unitPrice: 100, weight: ['100g', '250g', '500g', '1kg'] }
-    ]
-};
+// const getInitialProducts = () => {
+//     const savedProducts = localStorage.getItem('products');
+//     return savedProducts ? JSON.parse(savedProducts) : [
+//         { id: 1, image: image1, name: 'Potato Chips', unitPrice: 10, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 2, image: image2, name: 'Corn Chips', unitPrice: 20, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 3, image: image3, name: 'Pita Chips', unitPrice: 30, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 4, image: image4, name: 'Vegetable Chips', unitPrice: 40, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 5, image: image5, name: 'Kettle Chips', unitPrice: 50, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 6, image: image6, name: 'Banana Chips', unitPrice: 60, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 7, image: image7, name: 'Plantain Chips', unitPrice: 70, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 8, image: image8, name: 'Cassava Chips', unitPrice: 80, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 9, image: image9, name: 'Sweet Potato Chips', unitPrice: 90, weight: ['100g', '250g', '500g', '1kg'] },
+//         { id: 10, image: image10, name: 'Tortilla Chips', unitPrice: 100, weight: ['100g', '250g', '500g', '1kg'] }
+//     ]
+// };
 export default function Invoice() {
-    const [products, setProducts] = useState(getInitialProducts);
+    const [products, setProducts] = useState([]);
     const [quantities, setQuantities] = useState(Array(products.length).fill(Number()));
     const [discounts, setDiscounts] = useState(Array(products.length).fill(0));
     const [giftCount, setGiftCount] = useState(Array(products.length).fill(0));
@@ -41,6 +41,20 @@ export default function Invoice() {
     const [cash, setCash] = useState(0);
     const [cheque, setCheque] = useState(0);
     const [onlinePayment, setOnlinePayment] = useState(0);
+
+
+    //get products
+    useEffect(() => {
+        fetch('http://localhost:5000/products')
+  .then(response => response.json())  // Parse the JSON from the response
+  .then(data => {
+    console.log(data);
+    setProducts(data)  // Handle the data from the response
+  })
+  .catch(error => {
+    console.error('Error fetching data:', error);
+  });
+    }, [])
 
     // Save products to local storage whenever they are updated
     useEffect(() => {
@@ -123,11 +137,18 @@ export default function Invoice() {
 
     // Calculate totals
     const totalQuantity = quantities.reduce((acc, curr) => acc + curr, 0);
-    const totalSales = products.reduce((acc, product, index) => acc + calculateSales(product.unitPrice, quantities[index]), 0);
+    const totalSales = products.reduce((acc, product, index) => acc + (isNaN(calculateSales(product.unitPrice, quantities[index])) ? 0 : calculateSales(product.unitPrice, quantities[index])), 0);
     const totalDiscountedPrice = products.reduce((acc, product, index) => {
         const sales = calculateSales(product.unitPrice, quantities[index]);
-        return acc + calculateDiscountedPrice(sales, discounts[index]);
+        return acc + (isNaN(calculateDiscountedPrice(sales, discounts[index]) ? 0 : calculateDiscountedPrice(sales, discounts[index])));
     }, 0);
+
+    const finalPrice = (calculateDiscountedPrice(calculateSales(unitPrice, quantities[index]), discounts[index]).toFixed(2)) ? 
+    calculateDiscountedPrice(calculateSales(product.unitPrice, quantities[index]), discounts[index]).toFixed(2) :
+    '0.00';
+
+    const safeFinalPrice = isNaN(finalPrice) ? '0.00' : finalPrice;
+
 
     const totalDiscount = totalSales - totalDiscountedPrice;
     const totalGiftCount = giftCount.reduce((acc, curr) => acc + curr, 0);
@@ -369,14 +390,14 @@ export default function Invoice() {
                                     min="0" style={{ width: '100%', padding: '5px', border: 'none' }} name="" id="" />
                             </td>
                             <td className='border border-dark border-2 fw-bold text-end p-1'>{product.unitPrice}</td>
-                            <td className='border border-dark border-2 fw-bold text-end p-1'>{calculateSales(product.unitPrice, quantities[index])}</td>
+                            <td className='border border-dark border-2 fw-bold text-end p-1'>{isNaN(calculateSales(product.unitPrice, quantities[index])) ? 0 : calculateSales(product.unitPrice, quantities[index])}</td>
                             <td className='border border-dark border-2 fw-bold text-center p-1'>
                                 <input className="text-center fw-bold" type="number"
                                     value={discounts[index]}
                                     onChange={(event) => handleDiscountChange(index, event)}
                                     style={{ width: '60px', padding: '3px', border: 'none' }} name="" id="" />%
                             </td>
-                            <td className='border border-dark border-2 fw-bold text-end p-1'>{calculateDiscountedPrice(calculateSales(product.unitPrice, quantities[index]), discounts[index]).toFixed(2)}</td>
+                            <td className='border border-dark border-2 fw-bold text-end p-1'>{safeFinalPrice}</td>
                             <td className='border border-dark border-2 fw-bold text-end p-1'>
                                 <input className="text-center fw-bold"
                                     onChange={(event) => handleGiftCount(index, event)}
@@ -425,7 +446,7 @@ export default function Invoice() {
                     <div className="col-4">
                         <div className="row border-btm-2">
                             <div className="col-6 text-end fw-bold p-2">Net Sales :</div>
-                            <div className="col-6 text-end fw-bold p-2 pe-3">{netSales.toFixed(2)}</div>
+                            <div className="col-6 text-end fw-bold p-2 pe-3">{isNaN(netSales.toFixed(2)) ? 0 : netSales.toFixed(2)}</div>
                         </div>
                     </div>
                     <div className="col-3"></div>
@@ -484,7 +505,7 @@ export default function Invoice() {
                     <div className="col-4">
                         <div className="row border-btm-2">
                             <div className="col-6 text-end fw-bold p-2">Total Collection :</div>
-                            <div className="col-6 text-end fw-bold p-2 pe-3">{totalCollectionAmount.toFixed(2)}</div>
+                            <div className="col-6 text-end fw-bold p-2 pe-3">{totalCollectionAmount.toFixed(2) || 0}</div>
                         </div>
                     </div>
                     <div className="col-3"></div>
@@ -494,7 +515,7 @@ export default function Invoice() {
                     <div className="col-4">
                         <div className="row border-btm-2">
                             <div className="col-6 text-end fw-bold p-2">Due/Surplus :</div>
-                            <div className="col-6 text-end fw-bold p-2 pe-3">{dueSurplus.toFixed(2)}</div>
+                            <div className="col-6 text-end fw-bold p-2 pe-3">{isNaN(dueSurplus.toFixed(2)) ? 0 : dueSurplus.toFixed(2)}</div>
                         </div>
                     </div>
                     <div className="col-3"></div>
