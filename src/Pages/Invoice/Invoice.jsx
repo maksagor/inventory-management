@@ -45,7 +45,7 @@ export default function Invoice() {
 
     //get products
     useEffect(() => {
-        fetch('http://localhost:5000/products')
+        fetch('https://rscombd.com/api/products')
   .then(response => response.json())  // Parse the JSON from the response
   .then(data => {
     console.log(data);
@@ -125,31 +125,35 @@ export default function Invoice() {
         setOnlinePayment(onlinePaymentAmount);
     };
 
-    //calculate sales
-    const calculateSales = (price, quantity) => {
-        return price * quantity;
-    };
+   // Calculate sales
+const calculateSales = (price, quantity) => {
+    return price * quantity;
+};
 
-    // Calculate discounted price
-    const calculateDiscountedPrice = (sales, discount) => {
-        return sales - (sales * (discount / 100));
-    };
+// Calculate discounted price
+const calculateDiscountedPrice = (sales, discount) => {
+    return sales - (sales * (discount / 100));
+};
 
-    // Calculate totals
-    const totalQuantity = quantities.reduce((acc, curr) => acc + curr, 0);
-    const totalSales = products.reduce((acc, product, index) => acc + (isNaN(calculateSales(product.unitPrice, quantities[index])) ? 0 : calculateSales(product.unitPrice, quantities[index])), 0);
-    const totalDiscountedPrice = products.reduce((acc, product, index) => {
-        const sales = calculateSales(product.unitPrice, quantities[index]);
-        return acc + (isNaN(calculateDiscountedPrice(sales, discounts[index]) ? 0 : calculateDiscountedPrice(sales, discounts[index])));
-    }, 0);
+// Calculate totals
+const totalQuantity = quantities.reduce((acc, curr) => acc + curr, 0);
 
-    const finalPrice = (calculateDiscountedPrice(calculateSales(unitPrice, quantities[index]), discounts[index]).toFixed(2)) ? 
-    calculateDiscountedPrice(calculateSales(product.unitPrice, quantities[index]), discounts[index]).toFixed(2) :
-    '0.00';
+const totalSales = products.reduce((acc, product, index) => {
+    const sales = calculateSales(product.unitPrice, quantities[index]);
+    return acc + (isNaN(sales) ? 0 : sales);
+}, 0);
 
-    const safeFinalPrice = isNaN(finalPrice) ? '0.00' : finalPrice;
+const totalDiscountedPrice = products.reduce((acc, product, index) => {
+    const sales = calculateSales(product.unitPrice, quantities[index]);
+    const discountedPrice = discounts[index]
+        ? calculateDiscountedPrice(sales, discounts[index])
+        : sales; // If no discount, use the sales price
 
+    return acc + (isNaN(discountedPrice) ? 0 : discountedPrice);
+}, 0);
+    
 
+    
     const totalDiscount = totalSales - totalDiscountedPrice;
     const totalGiftCount = giftCount.reduce((acc, curr) => acc + curr, 0);
 
@@ -397,7 +401,7 @@ export default function Invoice() {
                                     onChange={(event) => handleDiscountChange(index, event)}
                                     style={{ width: '60px', padding: '3px', border: 'none' }} name="" id="" />%
                             </td>
-                            <td className='border border-dark border-2 fw-bold text-end p-1'>{safeFinalPrice}</td>
+                            <td className='border border-dark border-2 fw-bold text-end p-1'>{isNaN(calculateDiscountedPrice(calculateSales(product.unitPrice, quantities[index]), discounts[index])) ? 0 : calculateDiscountedPrice(calculateSales(product.unitPrice, quantities[index]), discounts[index])}</td>
                             <td className='border border-dark border-2 fw-bold text-end p-1'>
                                 <input className="text-center fw-bold"
                                     onChange={(event) => handleGiftCount(index, event)}

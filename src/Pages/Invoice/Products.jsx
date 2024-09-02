@@ -5,7 +5,7 @@ const Products = () => {
     const [products, setProducts] = useState([]);
     // const [loading, setLoading] = useState(true);
 
-    axios.get('https://rscombd.com/api/inv-template')
+    axios.get('https://rscombd.com/api/products')
   .then(response => console.log(response.data))
   .catch(error => console.error('Error:', error));
 
